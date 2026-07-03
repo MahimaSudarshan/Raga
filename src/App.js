@@ -1,106 +1,106 @@
-import React, { useState, useRef } from "react";
-import * as Tone from "tone";
+import React from "react";
+import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import { AppProvider, useApp } from "./context/AppContext";
+import PracticeScreen from "./components/Practice/PracticeScreen";
+import HistoryScreen from "./components/History/HistoryScreen";
+import FavouritesScreen from "./components/Favourites/FavouritesScreen";
+import SettingsScreen from "./components/Settings/SettingsScreen";
+import BottomBar from "./components/Layout/BottomBar";
+import "./styles/global.css";
 
-const SHRUTIS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const OCTAVES = [2, 3, 4, 5];
+const Layout = () => {
+  const { tradition, setTradition } = useApp();
 
-// Get the Pancham (5th note) of a given shruti
-const getPancham = (shruti, octave) => {
-  const index = SHRUTIS.indexOf(shruti);
-  const panchamIndex = (index + 7) % 12;
-  const panchamOctave = index + 7 >= 12 ? parseInt(octave) : parseInt(octave) - 1;
-  return `${SHRUTIS[panchamIndex]}${panchamOctave}`;
+  return (
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+
+      {/* Sidebar */}
+      <div style={{
+        width: "60px", background: "#1C1408", display: "flex",
+        flexDirection: "column", alignItems: "center", padding: "16px 0",
+        position: "fixed", top: 0, left: 0, height: "100vh", zIndex: 100,
+        borderRight: "1px solid #3D2210"
+      }}>
+        <div style={{
+          fontFamily: "Cinzel, serif", fontSize: "11px", color: "#C8A96E",
+          fontWeight: 500, letterSpacing: "1px", marginBottom: "32px"
+        }}>RA</div>
+
+        {[
+          { to: "/", icon: "⌂", label: "Practice" },
+          { to: "/history", icon: "◷", label: "History" },
+          { to: "/favourites", icon: "☆", label: "Favourites" },
+          { to: "/settings", icon: "⚙", label: "Settings" },
+        ].map(({ to, icon, label }) => (
+          <NavLink key={to} to={to} end={to === "/"} style={({ isActive }) => ({
+            display: "flex", flexDirection: "column", alignItems: "center",
+            padding: "12px 0", width: "100%", textDecoration: "none",
+            color: isActive ? "#C8A96E" : "#5A4020", fontSize: "20px",
+            borderLeft: isActive ? "2px solid #C8A96E" : "2px solid transparent",
+            marginBottom: "8px"
+          })}>
+            <span>{icon}</span>
+          </NavLink>
+        ))}
+      </div>
+
+      {/* Main content */}
+      <div style={{ marginLeft: "60px", flex: 1, paddingBottom: "64px" }}>
+
+        {/* Top nav */}
+        <div style={{
+          background: "#1C1408", padding: "0 32px", height: "48px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          position: "sticky", top: 0, zIndex: 99,
+          borderBottom: "1px solid #3D2210"
+        }}>
+          <span style={{ fontFamily: "Cinzel, serif", fontSize: "14px", color: "#C8A96E", letterSpacing: "4px" }}>RAGA</span>
+
+          <div style={{ display: "flex", border: "1px solid #5A4020", borderRadius: "20px", overflow: "hidden" }}>
+            {["hindustani", "carnatic"].map(t => (
+              <button key={t} onClick={() => setTradition(t)} style={{
+                padding: "6px 20px", fontSize: "11px", letterSpacing: "1px",
+                border: "none", cursor: "pointer", textTransform: "capitalize",
+                background: tradition === t ? "#C8A96E" : "transparent",
+                color: tradition === t ? "#1C1408" : "#7A5830", fontWeight: tradition === t ? 500 : 400
+              }}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+            ))}
+          </div>
+
+          <div style={{ width: "32px", height: "32px", borderRadius: "50%", border: "1px solid #5A4020", display: "flex", alignItems: "center", justifyContent: "center", color: "#C8A96E", fontSize: "14px", cursor: "pointer" }}>
+            ☺
+          </div>
+        </div>
+
+        {/* Triangle border */}
+        <div style={{ height: "20px", background: "#1C1408", overflow: "hidden" }}>
+          <svg width="100%" height="20" preserveAspectRatio="none">
+            {Array.from({ length: 80 }).map((_, i) => (
+              <polygon key={i} points={`${i * 18},0 ${i * 18 + 9},18 ${i * 18 + 18},0`} fill="#C8A96E" opacity="0.7" />
+            ))}
+          </svg>
+        </div>
+
+        <Routes>
+          <Route path="/" element={<PracticeScreen />} />
+          <Route path="/history" element={<HistoryScreen />} />
+          <Route path="/favourites" element={<FavouritesScreen />} />
+          <Route path="/settings" element={<SettingsScreen />} />
+        </Routes>
+      </div>
+
+      <BottomBar />
+    </div>
+  );
 };
 
 function App() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [shruti, setShruti] = useState("C");
-  const [octave, setOctave] = useState(3);
-  const synthsRef = useRef([]);
-  const loopRef = useRef(null);
-
-  const startDrone = async () => {
-    await Tone.start();
-
-    // 4 tanpura strings: Pa, Sa(high), Sa(high), Sa(low)
-    const strings = [
-      getPancham(shruti, octave),           // String 1 - Pancham
-      `${shruti}${parseInt(octave) + 1}`,   // String 2 - High Sa
-      `${shruti}${parseInt(octave) + 1}`,   // String 3 - High Sa
-      `${shruti}${octave}`,                 // String 4 - Low Sa
-    ];
-
-    const synths = strings.map(() =>
-      new Tone.Synth({
-        oscillator: { type: "sine" },
-        envelope: { attack: 0.8, decay: 0.5, sustain: 0.6, release: 2 },
-      }).toDestination()
-    );
-
-    synthsRef.current = synths;
-
-    // Pluck each string one by one in a cycle
-    let currentString = 0;
-    const loop = new Tone.Loop((time) => {
-      synths[currentString].triggerAttackRelease(strings[currentString], "2n", time);
-      currentString = (currentString + 1) % 4;
-    }, "2n");
-
-    loop.start(0);
-    Tone.Transport.start();
-    loopRef.current = loop;
-    setIsPlaying(true);
-  };
-
-  const stopDrone = () => {
-    if (loopRef.current) {
-      loopRef.current.stop();
-      loopRef.current.dispose();
-      loopRef.current = null;
-    }
-    synthsRef.current.forEach((s) => s.dispose());
-    synthsRef.current = [];
-    Tone.Transport.stop();
-    setIsPlaying(false);
-  };
-
   return (
-    <div>
-      <h1>Raga</h1>
-
-      <div>
-        <label>Shruti (Sa): </label>
-        <select
-          value={shruti}
-          onChange={(e) => setShruti(e.target.value)}
-          disabled={isPlaying}
-        >
-          {SHRUTIS.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-      </div>
-
-      <br />
-
-      <div>
-        <label>Octave: </label>
-        <select
-          value={octave}
-          onChange={(e) => setOctave(e.target.value)}
-          disabled={isPlaying}
-        >
-          {OCTAVES.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
-      </div>
-
-      <br />
-      <button onClick={startDrone} disabled={isPlaying}>Play</button>
-      <button onClick={stopDrone} disabled={!isPlaying}>Stop</button>
-      <p>{isPlaying ? `Tanpura playing: ${shruti}${octave}` : "Stopped"}</p>
-    </div>
+    <AppProvider>
+      <BrowserRouter>
+        <Layout />
+      </BrowserRouter>
+    </AppProvider>
   );
 }
 
