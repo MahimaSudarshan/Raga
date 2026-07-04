@@ -3,7 +3,7 @@ import * as Tone from "tone";
 import { useApp } from "../../context/AppContext";
 
 const SHRUTIS = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-const BASE_FILE = "/Samples/Tanpura/G.m4a";
+const BASE_FILE = "/samples/tanpura/G.m4a";
 
 const getPlaybackRate = (shruti) => {
   const index = SHRUTIS.indexOf(shruti);
