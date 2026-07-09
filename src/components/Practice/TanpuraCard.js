@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import * as Tone from "tone";
 import { useApp } from "../../context/AppContext";
 
@@ -25,36 +25,36 @@ const TanpuraCard = () => {
   const { shruti, setShruti, isPlaying, setIsPlaying } = useApp();
   const playerRef = useRef(null);
 
-  const handleShruti = async (s) => {
-    setShruti(s);
-    if (isPlaying && playerRef.current) {
-      playerRef.current.playbackRate = getPlaybackRate(s);
-    }
-  };
-
-  const togglePlay = async () => {
-    if (isPlaying) {
-      if (playerRef.current) {
-        playerRef.current.stop();
-        playerRef.current.dispose();
-        playerRef.current = null;
+  useEffect(() => {
+    const startAudio = async () => {
+      if (isPlaying) {
+        await Tone.start();
+        const player = new Tone.Player({
+          url: BASE_FILE,
+          loop: true,
+          fadeIn: 0.5,
+          fadeOut: 0.5,
+        }).toDestination();
+        await Tone.loaded();
+        player.playbackRate = getPlaybackRate(shruti);
+        player.start();
+        playerRef.current = player;
+      } else {
+        if (playerRef.current) {
+          playerRef.current.stop();
+          playerRef.current.dispose();
+          playerRef.current = null;
+        }
       }
-      setIsPlaying(false);
-    } else {
-      await Tone.start();
-      const player = new Tone.Player({
-        url: BASE_FILE,
-        loop: true,
-        fadeIn: 0.5,
-        fadeOut: 0.5,
-      }).toDestination();
-      await Tone.loaded();
-      player.playbackRate = getPlaybackRate(shruti);
-      player.start();
-      playerRef.current = player;
-      setIsPlaying(true);
+    };
+    startAudio();
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (playerRef.current) {
+      playerRef.current.playbackRate = getPlaybackRate(shruti);
     }
-  };
+  }, [shruti]);
 
   return (
     <div style={{
@@ -85,7 +85,7 @@ const TanpuraCard = () => {
       <div style={{ fontSize:"10px", letterSpacing:"2px", color:"#A08060", marginBottom:"8px" }}>SELECT SHRUTI</div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"6px", marginBottom:"8px" }}>
         {SHRUTIS.map(s => (
-          <button key={s} onClick={() => handleShruti(s)} style={{
+          <button key={s} onClick={() => setShruti(s)} style={{
             padding:"8px 4px", fontSize:"12px", fontWeight:500, textAlign:"center",
             border:"1px solid", borderColor: shruti===s ? "#C8A96E" : "#D4B896",
             borderRadius:"6px", cursor:"pointer",
@@ -98,15 +98,12 @@ const TanpuraCard = () => {
 
       {ornament}
 
-      <button onClick={togglePlay} style={{
-        width:"100%", padding:"12px", fontSize:"13px", letterSpacing:"2px",
-        background: isPlaying ? "#3D2210" : "#C8A96E",
-        border:"none", borderRadius:"8px",
-        color: isPlaying ? "#C8A96E" : "#1C1408",
-        cursor:"pointer", fontWeight:500
+      <div style={{
+        textAlign:"center", fontSize:"12px", color: isPlaying ? "#C8A96E" : "#A08060",
+        letterSpacing:"1px", padding:"8px 0"
       }}>
-        {isPlaying ? "■ STOP TANPURA" : "▶ PLAY TANPURA"}
-      </button>
+        {isPlaying ? "● Tanpura playing — use bottom bar to stop" : "Press ▶ in bottom bar to start"}
+      </div>
     </div>
   );
 };
