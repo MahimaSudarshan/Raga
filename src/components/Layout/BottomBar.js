@@ -1,8 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import { useApp } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
+import { db } from "../../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 const BottomBar = () => {
-  const { shruti, taal, laya, isPlaying, setIsPlaying, sessionTime, setSessionTime } = useApp();
+  const { shruti, taal, laya, tradition, isPlaying, setIsPlaying, sessionTime, setSessionTime } = useApp();
+  const { user } = useAuth();
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -10,14 +14,31 @@ const BottomBar = () => {
       timerRef.current = setInterval(() => setSessionTime(t => t + 1), 1000);
     } else {
       clearInterval(timerRef.current);
-      setSessionTime(0);
     }
     return () => clearInterval(timerRef.current);
   }, [isPlaying]);
 
   const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
-  const handleStop = () => {
+  const saveSession = async () => {
+    if (!user || sessionTime < 10) return;
+    try {
+      await addDoc(collection(db, "Sessions"), {
+        userId: user.uid,
+        shruti,
+        taal,
+        laya,
+        tradition,
+        duration: sessionTime,
+        date: serverTimestamp(),
+      });
+    } catch (e) {
+      console.error("Error saving session:", e);
+    }
+  };
+
+  const handleStop = async () => {
+    await saveSession();
     setIsPlaying(false);
     setSessionTime(0);
   };
