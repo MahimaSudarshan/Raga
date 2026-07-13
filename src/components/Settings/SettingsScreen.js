@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { db } from "../../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const Toggle = ({ value, onChange }) => (
   <div onClick={() => onChange(!value)} style={{
@@ -14,9 +17,43 @@ const Toggle = ({ value, onChange }) => (
 );
 
 const SettingsScreen = () => {
+  const { user, logout } = useAuth();
   const [metronome, setMetronome] = useState(true);
   const [drift, setDrift] = useState(true);
   const [hq, setHq] = useState(false);
+  const [streak, setStreak] = useState(0);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const ref = doc(db, "Users", user.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data();
+          setMetronome(data.metronome ?? true);
+          setDrift(data.drift ?? true);
+          setHq(data.hq ?? false);
+          setStreak(data.streak ?? 0);
+        }
+      } catch (e) {
+        console.error("Error fetching settings:", e);
+      }
+    };
+    fetchSettings();
+  }, [user]);
+
+  const saveSetting = async (key, value) => {
+    try {
+      await setDoc(doc(db, "Users", user.uid), { [key]: value }, { merge: true });
+    } catch (e) {
+      console.error("Error saving setting:", e);
+    }
+  };
+
+  const handleToggle = (key, setter) => (val) => {
+    setter(val);
+    saveSetting(key, val);
+  };
 
   const sectionStyle = {
     background:"#FBF7F0", border:"1px solid #D4B896", borderRadius:"12px",
@@ -41,16 +78,16 @@ const SettingsScreen = () => {
       <div style={sectionStyle}>
         <div style={headerStyle}>PRACTICE AUDIO</div>
         {[
-          { label:"Metronome Click", desc:"Audible click on each beat of the taal", value:metronome, set:setMetronome },
-          { label:"Drift Detection", desc:"Pitch monitoring via microphone", value:drift, set:setDrift },
-          { label:"High Quality Audio", desc:"Higher CPU usage, studio-grade rendering", value:hq, set:setHq },
-        ].map(({ label, desc, value, set }) => (
+          { label:"Metronome Click", desc:"Audible click on each beat of the taal", value:metronome, key:"metronome", setter:setMetronome },
+          { label:"Drift Detection", desc:"Pitch monitoring via microphone", value:drift, key:"drift", setter:setDrift },
+          { label:"High Quality Audio", desc:"Higher CPU usage, studio-grade rendering", value:hq, key:"hq", setter:setHq },
+        ].map(({ label, desc, value, key, setter }) => (
           <div key={label} style={rowStyle}>
             <div>
               <div style={{ fontSize:"14px", color:"#3D2210", marginBottom:"3px" }}>{label}</div>
               <div style={{ fontSize:"12px", color:"#A08060" }}>{desc}</div>
             </div>
-            <Toggle value={value} onChange={set} />
+            <Toggle value={value} onChange={handleToggle(key, setter)} />
           </div>
         ))}
       </div>
@@ -58,17 +95,23 @@ const SettingsScreen = () => {
       <div style={sectionStyle}>
         <div style={headerStyle}>ACCOUNT</div>
         {[
-          ["Name", "Mahima Sudarshan"],
-          ["Email", "mahima@example.com"],
-          ["Tradition", "Carnatic"],
-          ["Level", "Intermediate"],
-          ["Practice Streak", "1 day"],
+          ["Name", user.displayName || "—"],
+          ["Email", user.email || "—"],
+          ["Practice Streak", `${streak} days`],
         ].map(([label, value]) => (
           <div key={label} style={{ ...rowStyle, borderBottom:"1px solid #EDE5D8" }}>
             <span style={{ fontSize:"14px", color:"#3D2210" }}>{label}</span>
             <span style={{ fontSize:"14px", color:"#A08060" }}>{value}</span>
           </div>
         ))}
+        <div style={{ ...rowStyle, borderBottom:"none" }}>
+          <span style={{ fontSize:"14px", color:"#3D2210" }}>Account</span>
+          <button onClick={logout} style={{
+            padding:"6px 16px", fontSize:"12px", letterSpacing:"1px",
+            background:"transparent", border:"1px solid #D4B896",
+            borderRadius:"6px", color:"#A08060", cursor:"pointer"
+          }}>Sign Out</button>
+        </div>
       </div>
     </div>
   );
