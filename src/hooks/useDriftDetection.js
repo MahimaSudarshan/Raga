@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 const useDriftDetection = (isPlaying, bpm, enabled) => {
   const [driftMessage, setDriftMessage] = useState(null);
   const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
   const streamRef = useRef(null);
   const intervalRef = useRef(null);
   const onsetTimesRef = useRef([]);
@@ -21,9 +20,10 @@ const useDriftDetection = (isPlaying, bpm, enabled) => {
   const cleanup = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (audioContextRef.current) audioContextRef.current.close();
-    audioContextRef.current = null;
-    analyserRef.current = null;
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
     streamRef.current = null;
     onsetTimesRef.current = [];
   };
@@ -35,21 +35,23 @@ const useDriftDetection = (isPlaying, bpm, enabled) => {
 
       const audioContext = new AudioContext();
       audioContextRef.current = audioContext;
+      
 
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 2048;
       source.connect(analyser);
-      analyserRef.current = analyser;
 
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
+      
       let lastOnsetTime = null;
       let lastEnergy = 0;
 
       intervalRef.current = setInterval(() => {
         analyser.getByteTimeDomainData(dataArray);
 
+        // RMS energy for onset detection
         let sum = 0;
         for (let i = 0; i < bufferLength; i++) {
           const val = (dataArray[i] - 128) / 128;
@@ -62,10 +64,7 @@ const useDriftDetection = (isPlaying, bpm, enabled) => {
           if (!lastOnsetTime || now - lastOnsetTime > 200) {
             onsetTimesRef.current.push(now);
             lastOnsetTime = now;
-
-            if (onsetTimesRef.current.length > 8) {
-              onsetTimesRef.current.shift();
-            }
+            if (onsetTimesRef.current.length > 8) onsetTimesRef.current.shift();
 
             if (onsetTimesRef.current.length >= 4) {
               const intervals = [];
@@ -77,11 +76,10 @@ const useDriftDetection = (isPlaying, bpm, enabled) => {
               const diff = singerBpm - bpm;
 
               if (Math.abs(diff) > 5) {
-                if (diff > 0) {
-                  setDriftMessage("You're singing faster than the taal — slow down slightly");
-                } else {
-                  setDriftMessage("You're singing slower than the taal — speed up slightly");
-                }
+                setDriftMessage(diff > 0
+                  ? "You're singing faster than the taal — slow down slightly"
+                  : "You're singing slower than the taal — speed up slightly"
+                );
               } else {
                 setDriftMessage(null);
               }
