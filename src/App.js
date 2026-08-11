@@ -6,6 +6,7 @@ import PracticeScreen from "./components/Practice/PracticeScreen";
 import HistoryScreen from "./components/History/HistoryScreen";
 import FavouritesScreen from "./components/Favourites/FavouritesScreen";
 import SettingsScreen from "./components/Settings/SettingsScreen";
+import RagaScreen from "./components/Raga/RagaScreen";
 import BottomBar from "./components/Layout/BottomBar";
 import LoginScreen from "./components/Auth/LoginScreen";
 import "./styles/global.css";
@@ -35,6 +36,7 @@ const Layout = () => {
           { to:"/", icon:"⌂", label:"Practice" },
           { to:"/history", icon:"◷", label:"History" },
           { to:"/favourites", icon:"☆", label:"Favourites" },
+          { to:"/raga", icon:"◎", label:"Raga" },
           { to:"/settings", icon:"⚙", label:"Settings" },
         ].map(({ to, icon, label }) => (
           <NavLink key={to} to={to} end={to==="/"} style={({ isActive }) => ({
@@ -42,9 +44,9 @@ const Layout = () => {
             padding:"12px 0", width:"100%", textDecoration:"none",
             color: isActive ? "#C8A96E" : "#5A4020", fontSize:"20px",
             borderLeft: isActive ? "2px solid #C8A96E" : "2px solid transparent",
-            marginBottom:"8px"
+            marginBottom:"8px", title: label
           })}>
-            <span>{icon}</span>
+            <span title={label}>{icon}</span>
           </NavLink>
         ))}
       </div>
@@ -98,6 +100,7 @@ const Layout = () => {
           <Route path="/" element={<PracticeScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/favourites" element={<FavouritesScreen />} />
+          <Route path="/raga" element={<RagaScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
         </Routes>
       </div>
