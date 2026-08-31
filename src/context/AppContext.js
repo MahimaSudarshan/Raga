@@ -11,6 +11,7 @@ export const AppProvider = ({ children }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
   const [volume, setVolume] = useState(75);
+  const [selectedMelakarta, setSelectedMelakarta] = useState(null);
 
   return (
     <AppContext.Provider value={{
@@ -22,6 +23,7 @@ export const AppProvider = ({ children }) => {
       isPlaying, setIsPlaying,
       sessionTime, setSessionTime,
       volume, setVolume,
+      selectedMelakarta, setSelectedMelakarta,
     }}>
       {children}
     </AppContext.Provider>

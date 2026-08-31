@@ -4,8 +4,7 @@ import { getMelakarthaScale } from "../../data/melakarta";
 import { useApp } from "../../context/AppContext";
 
 const RagaScreen = () => {
-  const [selectedMelakarta, setSelectedMelakarta] = useState(null);
-  const { setShruti } = useApp();
+  const { setShruti, setSelectedMelakarta, selectedMelakarta } = useApp();
 
   const handleSelect = (raga) => {
     setSelectedMelakarta(raga);
@@ -28,7 +27,6 @@ const RagaScreen = () => {
         selectedMelakarta={selectedMelakarta}
       />
 
-      {/* Scale display */}
       {scale && selectedMelakarta && (
         <div style={{
           background:"#FBF7F0", border:"1px solid #D4B896", borderRadius:"12px",
@@ -45,6 +43,7 @@ const RagaScreen = () => {
             </div>
             <button onClick={() => {
               setShruti("C");
+              setSelectedMelakarta(selectedMelakarta);
               window.location.href = "/";
             }} style={{
               padding:"8px 20px", fontSize:"12px", letterSpacing:"1px",
