@@ -1,24 +1,36 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { useApp } from "../../context/AppContext";
+import * as Tone from "tone";
+
+const NOTE_STRINGS = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const RECORDED_SHRUTI = "G#";
+const RECORDED_SHRUTI_INDEX = NOTE_STRINGS.indexOf(RECORDED_SHRUTI);
+
+const getSemitonShift = (shruti) => {
+  const shrutiIndex = NOTE_STRINGS.indexOf(shruti);
+  let shift = shrutiIndex - RECORDED_SHRUTI_INDEX;
+  if (shift > 6) shift -= 12;
+  if (shift < -6) shift += 12;
+  return shift;
+};
 
 const HINDUSTANI_TAALS = [
-  { name: "Teentaal", beats: 16 },
-  { name: "Ektaal", beats: 12 },
-  { name: "Rupak", beats: 7 },
-  { name: "Keherwa", beats: 8 },
-  { name: "Dadra", beats: 6 },
-  { name: "Jhaptaal", beats: 10 },
+  { name: "Teentaal", beats: 16, file: "/Samples/Tabla/Teen taal.m4a", recordedBPM: 73.8 },
+  { name: "Ektaal", beats: 12, file: "/Samples/Tabla/Ek taal.m4a", recordedBPM: 55.4 },
+  { name: "Rupak", beats: 7, file: "/Samples/Tabla/Rupak taal.m4a", recordedBPM: 60 },
+  { name: "Dadra", beats: 6, file: "/Samples/Tabla/Dadra taal.m4a", recordedBPM: 51.4 },
+  { name: "Jhaptaal", beats: 10, file: "/Samples/Tabla/Jaap taal.m4a", recordedBPM: 37.5 },
 ];
 
 const CARNATIC_TALAMS = [
-  { name: "Adi Tala", beats: 8 },
-  { name: "Rupaka", beats: 6 },
-  { name: "Misra Chapu", beats: 7 },
-  { name: "Khanda Chapu", beats: 5 },
+  { name: "Adi Tala", beats: 8, file: "/Samples/Mrudanga/Adi.m4a", recordedBPM: 61.7 },
+  { name: "Rupaka", beats: 6, file: "/Samples/Mrudanga/Rupaka.m4a", recordedBPM: 123.4 },
+  { name: "Misra Chapu", beats: 7, file: "/Samples/Mrudanga/Misra chapu.m4a", recordedBPM: 111.2 },
+  { name: "Khanda Chapu", beats: 5, file: "/Samples/Mrudanga/Khanda chapu.m4a", recordedBPM: 127.3 },
 ];
 
 const LAYAS = ["Vilambit", "Madhya", "Drut"];
-const LAYA_BPM = { Vilambit: 40, Madhya: 120, Drut: 180 };
+const LAYA_BPM = { Vilambit: 40, Madhya: 80, Drut: 160 };
 
 const ornament = (
   <div style={{ display:"flex", alignItems:"center", margin:"14px 0" }}>
@@ -29,48 +41,81 @@ const ornament = (
 );
 
 const TablaCard = () => {
-  const { tradition, taal, setTaal, laya, setLaya, bpm, setBpm } = useApp();
+  const { tradition, taal, setTaal, laya, setLaya, bpm, setBpm, isPlaying, shruti } = useApp();
+  const playerRef = useRef(null);
 
   const taals = tradition === "hindustani" ? HINDUSTANI_TAALS : CARNATIC_TALAMS;
   const instrumentName = tradition === "hindustani" ? "Tabla" : "Mrudangam";
   const instrumentDesc = tradition === "hindustani" ? "TAAL KEEPER · RHYTHM FOUNDATION" : "DOUBLE-HEADED BARREL DRUM · TALAM FOUNDATION";
+  const currentTaal = taals.find(t => t.name === taal) || taals[0];
 
   React.useEffect(() => {
     const defaultTaal = tradition === "hindustani" ? "Teentaal" : "Adi Tala";
     setTaal(defaultTaal);
   }, [tradition]);
 
+  const getPlaybackRate = () => {
+    if (!currentTaal) return 1;
+    const tempoRate = bpm / currentTaal.recordedBPM;
+    const pitchRate = Math.pow(2, getSemitonShift(shruti) / 12);
+    return tempoRate * pitchRate;
+  };
+
+  useEffect(() => {
+    let player = null;
+
+    const startAudio = async () => {
+      if (isPlaying && currentTaal) {
+        await Tone.start();
+        player = new Tone.Player({
+          url: currentTaal.file,
+          loop: true,
+          fadeIn: 0.3,
+          fadeOut: 0.3,
+        }).toDestination();
+        await Tone.loaded();
+        player.playbackRate = getPlaybackRate();
+        player.start();
+        playerRef.current = player;
+      } else {
+        if (playerRef.current) {
+          playerRef.current.stop();
+          playerRef.current.dispose();
+          playerRef.current = null;
+        }
+      }
+    };
+
+    startAudio();
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.stop();
+        playerRef.current.dispose();
+        playerRef.current = null;
+      }
+    };
+  }, [isPlaying, taal]);
+
+  useEffect(() => {
+    if (playerRef.current) {
+      playerRef.current.playbackRate = getPlaybackRate();
+    }
+  }, [bpm, shruti]);
+
   return (
     <div style={{
       background:"#FBF7F0", border:"1px solid #D4B896", borderRadius:"12px",
       padding:"28px", position:"relative"
     }}>
-      <div style={{
-        position:"absolute", top:"16px", right:"16px",
-        background:"#C8A96E", color:"#1C1408", fontSize:"10px",
-        letterSpacing:"2px", padding:"4px 10px", borderRadius:"4px", fontWeight:500
-      }}>COMING SOON</div>
-
       <div style={{ display:"flex", justifyContent:"center", marginBottom:"20px" }}>
         {tradition === "hindustani" ? (
-          <img
-            src="/images/instruments/tabla.png"
-            alt="Tabla"
-            style={{
-              height:"200px",
-              objectFit:"contain",
-              filter:"sepia(0.3) saturate(0.8) brightness(0.8)"
-            }}
+          <img src="/images/instruments/tabla.png" alt="Tabla"
+            style={{ height:"200px", objectFit:"contain", filter:"sepia(0.3) saturate(0.8) brightness(0.8)" }}
           />
         ) : (
-          <img
-            src="/images/instruments/mrudangam.png"
-            alt="Mrudangam"
-            style={{
-              height:"200px",
-              objectFit:"contain",
-              filter:"sepia(0.8) saturate(0.6) brightness(0.75)"
-            }}
+          <img src="/images/instruments/mrudangam.png" alt="Mrudangam"
+            style={{ height:"200px", objectFit:"contain", filter:"sepia(0.3) saturate(1.2) brightness(0.85)" }}
           />
         )}
       </div>
@@ -117,6 +162,14 @@ const TablaCard = () => {
       />
 
       {ornament}
+
+      <div style={{
+        textAlign:"center", fontSize:"12px",
+        color: isPlaying ? "#C8A96E" : "#A08060",
+        letterSpacing:"1px", padding:"8px 0"
+      }}>
+        {isPlaying ? `● ${instrumentName} playing — ${taal} · ${bpm} BPM` : "Press ▶ in bottom bar to start"}
+      </div>
     </div>
   );
 };
