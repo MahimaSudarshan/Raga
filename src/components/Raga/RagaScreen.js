@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import KatapayadiCircle from "../Practice/KatapayadiCircle";
 import { getMelakarthaScale } from "../../data/melakarta";
 import { useApp } from "../../context/AppContext";
 
 const RagaScreen = () => {
   const { setShruti, setSelectedMelakarta, selectedMelakarta } = useApp();
+  const navigate = useNavigate();
 
   const handleSelect = (raga) => {
     setSelectedMelakarta(raga);
@@ -22,10 +24,7 @@ const RagaScreen = () => {
         72 parent scales of Carnatic music · Katapayadi system
       </p>
 
-      <KatapayadiCircle
-        onSelect={handleSelect}
-        selectedMelakarta={selectedMelakarta}
-      />
+      <KatapayadiCircle onSelect={handleSelect} selectedMelakarta={selectedMelakarta} />
 
       {scale && selectedMelakarta && (
         <div style={{
@@ -43,8 +42,7 @@ const RagaScreen = () => {
             </div>
             <button onClick={() => {
               setShruti("C");
-              setSelectedMelakarta(selectedMelakarta);
-              window.location.href = "/";
+              navigate("/");
             }} style={{
               padding:"8px 20px", fontSize:"12px", letterSpacing:"1px",
               background:"#C8A96E", border:"none", borderRadius:"8px",
@@ -80,13 +78,7 @@ const RagaScreen = () => {
           </div>
 
           <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"12px", marginTop:"20px" }}>
-            {[
-              ["Ri", scale.ri],
-              ["Ga", scale.ga],
-              ["Ma", scale.ma],
-              ["Dha", scale.dha],
-              ["Ni", scale.ni],
-            ].map(([label, value]) => (
+            {[["Ri",scale.ri],["Ga",scale.ga],["Ma",scale.ma],["Dha",scale.dha],["Ni",scale.ni]].map(([label,value]) => (
               <div key={label} style={{
                 background:"#F5EFE4", border:"1px solid #D4B896",
                 borderRadius:"8px", padding:"12px", textAlign:"center"

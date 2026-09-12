@@ -22,14 +22,14 @@ const ornament = (
 );
 
 const TanpuraCard = () => {
-  const { shruti, setShruti, isPlaying } = useApp();
+  const { shruti, setShruti, tanpuraPlaying, setTanpuraPlaying } = useApp();
   const playerRef = useRef(null);
 
   useEffect(() => {
     let player = null;
 
     const startAudio = async () => {
-      if (isPlaying) {
+      if (tanpuraPlaying) {
         await Tone.start();
         player = new Tone.Player({
           url: BASE_FILE,
@@ -59,7 +59,7 @@ const TanpuraCard = () => {
         playerRef.current = null;
       }
     };
-  }, [isPlaying]);
+  }, [tanpuraPlaying]);
 
   useEffect(() => {
     if (playerRef.current) {
@@ -109,13 +109,15 @@ const TanpuraCard = () => {
 
       {ornament}
 
-      <div style={{
-        textAlign:"center", fontSize:"12px",
-        color: isPlaying ? "#C8A96E" : "#A08060",
-        letterSpacing:"1px", padding:"8px 0"
+      <button onClick={() => setTanpuraPlaying(p => !p)} style={{
+        width:"100%", padding:"16px", fontSize:"13px", letterSpacing:"1px",
+        fontWeight:500, borderRadius:"8px", cursor:"pointer",
+        background: tanpuraPlaying ? "transparent" : "#C8A96E",
+        border: tanpuraPlaying ? "1px solid #C8503A" : "none",
+        color: tanpuraPlaying ? "#C8503A" : "#1C1408"
       }}>
-        {isPlaying ? "● Tanpura playing — use bottom bar to stop" : "Press ▶ in bottom bar to start"}
-      </div>
+        {tanpuraPlaying ? "■ STOP TANPURA" : "▶ PLAY TANPURA"}
+      </button>
     </div>
   );
 };

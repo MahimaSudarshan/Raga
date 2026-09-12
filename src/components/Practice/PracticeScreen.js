@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import TanpuraCard from "./TanpuraCard";
 import TablaCard from "./TablaCard";
 import ViolinCard from "./ViolinCard";
+import HarmoniumCard from "./HarmoniumCard";
 import BeatVisualizer from "./BeatVisualizer";
 import useDriftDetection from "../../hooks/useDriftDetection";
 import usePitchDetection from "../../hooks/usePitchDetection";
@@ -49,15 +50,11 @@ const PracticeScreen = () => {
           padding:"10px 20px", marginBottom:"16px",
           display:"flex", justifyContent:"space-between", alignItems:"center"
         }}>
-          <div style={{ fontSize:"12px", color:"#C8A96E", letterSpacing:"1px" }}>
-            PRACTICING RAGA
-          </div>
+          <div style={{ fontSize:"12px", color:"#C8A96E", letterSpacing:"1px" }}>PRACTICING RAGA</div>
           <div style={{ fontFamily:"Cinzel,serif", fontSize:"14px", color:"#C8A96E" }}>
             {selectedMelakarta.number}. {selectedMelakarta.name}
           </div>
-          <div style={{ fontSize:"11px", color:"#7A5830" }}>
-            {selectedMelakarta.chakra} Chakra
-          </div>
+          <div style={{ fontSize:"11px", color:"#7A5830" }}>{selectedMelakarta.chakra} Chakra</div>
         </div>
       )}
 
@@ -120,10 +117,16 @@ const PracticeScreen = () => {
         </div>
       )}
 
+      {/* Instrument grid */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"24px", marginBottom:"24px" }}>
         <TanpuraCard />
         <TablaCard />
         <ViolinCard />
+      </div>
+
+      {/* Harmonium — full width */}
+      <div style={{ marginBottom:"24px" }}>
+        <HarmoniumCard />
       </div>
 
       <BeatVisualizer />

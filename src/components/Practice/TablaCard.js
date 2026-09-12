@@ -41,7 +41,7 @@ const ornament = (
 );
 
 const TablaCard = () => {
-  const { tradition, taal, setTaal, laya, setLaya, bpm, setBpm, isPlaying, shruti } = useApp();
+  const { tradition, taal, setTaal, laya, setLaya, bpm, setBpm, tablaPlaying, setTablaPlaying, shruti } = useApp();
   const playerRef = useRef(null);
 
   const taals = tradition === "hindustani" ? HINDUSTANI_TAALS : CARNATIC_TALAMS;
@@ -65,7 +65,7 @@ const TablaCard = () => {
     let player = null;
 
     const startAudio = async () => {
-      if (isPlaying && currentTaal) {
+      if (tablaPlaying && currentTaal) {
         await Tone.start();
         player = new Tone.Player({
           url: currentTaal.file,
@@ -95,7 +95,7 @@ const TablaCard = () => {
         playerRef.current = null;
       }
     };
-  }, [isPlaying, taal]);
+  }, [tablaPlaying, taal]);
 
   useEffect(() => {
     if (playerRef.current) {
@@ -163,13 +163,15 @@ const TablaCard = () => {
 
       {ornament}
 
-      <div style={{
-        textAlign:"center", fontSize:"12px",
-        color: isPlaying ? "#C8A96E" : "#A08060",
-        letterSpacing:"1px", padding:"8px 0"
+      <button onClick={() => setTablaPlaying(p => !p)} style={{
+        width:"100%", padding:"16px", fontSize:"13px", letterSpacing:"1px",
+        fontWeight:500, borderRadius:"8px", cursor:"pointer",
+        background: tablaPlaying ? "transparent" : "#C8A96E",
+        border: tablaPlaying ? "1px solid #C8503A" : "none",
+        color: tablaPlaying ? "#C8503A" : "#1C1408"
       }}>
-        {isPlaying ? `● ${instrumentName} playing — ${taal} · ${bpm} BPM` : "Press ▶ in bottom bar to start"}
-      </div>
+        {tablaPlaying ? `■ STOP ${instrumentName.toUpperCase()}` : `▶ PLAY ${instrumentName.toUpperCase()}`}
+      </button>
     </div>
   );
 };
