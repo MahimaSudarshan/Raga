@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import TanpuraCard from "./TanpuraCard";
 import TablaCard from "./TablaCard";
-import ViolinCard from "./ViolinCard";
-import HarmoniumCard from "./HarmoniumCard";
 import BeatVisualizer from "./BeatVisualizer";
 import useDriftDetection from "../../hooks/useDriftDetection";
 import usePitchDetection from "../../hooks/usePitchDetection";
@@ -121,12 +119,6 @@ const PracticeScreen = () => {
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"24px", marginBottom:"24px" }}>
         <TanpuraCard />
         <TablaCard />
-        <ViolinCard />
-      </div>
-
-      {/* Harmonium — full width */}
-      <div style={{ marginBottom:"24px" }}>
-        <HarmoniumCard />
       </div>
 
       <BeatVisualizer />
