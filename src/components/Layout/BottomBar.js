@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
-import { db, storage } from "../../firebase";
+import { db } from "../../firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import useAudioRecorder from "../../hooks/useAudioRecorder";
 
 const BottomBar = () => {
@@ -34,15 +33,25 @@ const BottomBar = () => {
 
   const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
-  const uploadRecording = async (blob) => {
+  const downloadRecording = (blob) => {
     const ext = mimeTypeRef.current.includes("mp4") ? "mp4"
       : mimeTypeRef.current.includes("ogg") ? "ogg" : "webm";
-    const fileRef = ref(storage, `recordings/${user.uid}/${Date.now()}.${ext}`);
-    await uploadBytes(fileRef, blob, { contentType: mimeTypeRef.current });
-    return await getDownloadURL(fileRef);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filename = `raga-practice-${timestamp}.${ext}`;
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    return filename;
   };
 
-  const saveSession = async (recordingUrl) => {
+  const saveSession = async (hasRecording, recordingFilename) => {
     if (!user || sessionTime < 10) return;
     try {
       await addDoc(collection(db, "Sessions"), {
@@ -53,7 +62,8 @@ const BottomBar = () => {
         tradition,
         duration: sessionTime,
         outOfTuneCount,
-        recordingUrl: recordingUrl || null,
+        hasRecording: !!hasRecording,
+        recordingFilename: recordingFilename || null,
         date: serverTimestamp(),
       });
     } catch (e) {
@@ -64,17 +74,16 @@ const BottomBar = () => {
   const handleStop = async () => {
     const blob = await finalizeRecording();
 
-    if (user && sessionTime >= 10) {
-      let recordingUrl = null;
-      if (blob) {
-        try {
-          recordingUrl = await uploadRecording(blob);
-        } catch (e) {
-          console.error("Error uploading recording:", e);
-        }
+    let filename = null;
+    if (blob && sessionTime >= 10) {
+      try {
+        filename = downloadRecording(blob);
+      } catch (e) {
+        console.error("Error downloading recording:", e);
       }
-      await saveSession(recordingUrl);
     }
+
+    await saveSession(!!filename, filename);
 
     setIsPlaying(false);
     setSessionTime(0);

@@ -79,12 +79,12 @@ const HistoryScreen = () => {
                       {row.outOfTuneCount ?? "—"}
                     </td>
                     <td style={{ padding:"16px 20px" }}>
-                      {row.recordingUrl ? (
-                        <audio controls src={row.recordingUrl} style={{ height:"32px", maxWidth:"200px" }} />
-                      ) : (
-                        <span style={{ fontSize:"13px", color:"#A08060" }}>—</span>
-                      )}
-                    </td>
+  {row.hasRecording ? (
+    <span style={{ fontSize:"12px", color:"#4A8C5C" }}>✓ Downloaded</span>
+  ) : (
+    <span style={{ fontSize:"13px", color:"#A08060" }}>—</span>
+  )}
+</td>
                   </tr>
                 ))}
               </tbody>
