@@ -13,6 +13,7 @@ export const AppProvider = ({ children }) => {
   const [sessionTime, setSessionTime] = useState(0);
   const [volume, setVolume] = useState(75);
   const [selectedMelakarta, setSelectedMelakarta] = useState(null);
+  const [outOfTuneCount, setOutOfTuneCount] = useState(0);
 
   const isPlaying = tanpuraPlaying || tablaPlaying;
   const setIsPlaying = (valueOrFn) => {
@@ -35,6 +36,7 @@ export const AppProvider = ({ children }) => {
       sessionTime, setSessionTime,
       volume, setVolume,
       selectedMelakarta, setSelectedMelakarta,
+      outOfTuneCount, setOutOfTuneCount,
     }}>
       {children}
     </AppContext.Provider>

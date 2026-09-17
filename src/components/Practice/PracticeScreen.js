@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TanpuraCard from "./TanpuraCard";
 import TablaCard from "./TablaCard";
 import BeatVisualizer from "./BeatVisualizer";
@@ -10,11 +10,12 @@ import { db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 const PracticeScreen = () => {
-  const { isPlaying, bpm, shruti, selectedMelakarta } = useApp();
+  const { isPlaying, bpm, shruti, selectedMelakarta, setOutOfTuneCount } = useApp();
   const { user } = useAuth();
   const [driftEnabled, setDriftEnabled] = useState(true);
   const { driftMessage } = useDriftDetection(isPlaying, bpm, driftEnabled);
   const { pitchInfo } = usePitchDetection(isPlaying, shruti, driftEnabled, selectedMelakarta);
+  const wasInTuneRef = useRef(true);
 
   useEffect(() => {
     const fetchDriftSetting = async () => {
@@ -30,6 +31,26 @@ const PracticeScreen = () => {
     fetchDriftSetting();
   }, [user]);
 
+  // Count how many times the user goes out of tune during a session
+  useEffect(() => {
+    if (!isPlaying || !pitchInfo || !pitchInfo.ragaSelected) return;
+
+    if (pitchInfo.valid === false) {
+      if (wasInTuneRef.current) {
+        setOutOfTuneCount(c => c + 1);
+        wasInTuneRef.current = false;
+      }
+    } else if (pitchInfo.valid === true) {
+      wasInTuneRef.current = true;
+    }
+  }, [pitchInfo, isPlaying]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      wasInTuneRef.current = true;
+    }
+  }, [isPlaying]);
+
   return (
     <div style={{ padding:"32px", background:"#F5EFE4", minHeight:"calc(100vh - 132px)" }}>
 
@@ -41,7 +62,6 @@ const PracticeScreen = () => {
         </div>
       </div>
 
-      {/* Selected raga banner */}
       {selectedMelakarta && (
         <div style={{
           background:"#3D2210", borderRadius:"8px",
@@ -56,7 +76,6 @@ const PracticeScreen = () => {
         </div>
       )}
 
-      {/* Drift detection nudge */}
       {driftMessage && (
         <div style={{
           background:"#FFF8EE", border:"1px solid #C8A96E", borderRadius:"8px",
@@ -67,7 +86,6 @@ const PracticeScreen = () => {
         </div>
       )}
 
-      {/* Pitch detection display */}
       {isPlaying && driftEnabled && (
         <div style={{
           background:"#FBF7F0", border:"1px solid",
@@ -115,7 +133,6 @@ const PracticeScreen = () => {
         </div>
       )}
 
-      {/* Instrument grid */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"24px", marginBottom:"24px" }}>
         <TanpuraCard />
         <TablaCard />

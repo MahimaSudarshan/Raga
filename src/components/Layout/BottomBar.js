@@ -1,13 +1,19 @@
 import React, { useEffect, useRef } from "react";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
-import { db } from "../../firebase";
+import { db, storage } from "../../firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import useAudioRecorder from "../../hooks/useAudioRecorder";
 
 const BottomBar = () => {
-  const { shruti, taal, laya, tradition, isPlaying, setIsPlaying, sessionTime, setSessionTime } = useApp();
+  const {
+    shruti, taal, laya, tradition, isPlaying, setIsPlaying,
+    sessionTime, setSessionTime, outOfTuneCount, setOutOfTuneCount
+  } = useApp();
   const { user } = useAuth();
   const timerRef = useRef(null);
+  const { ensureRecording, pauseRecording, finalizeRecording, mimeTypeRef } = useAudioRecorder();
 
   useEffect(() => {
     if (isPlaying) {
@@ -18,9 +24,25 @@ const BottomBar = () => {
     return () => clearInterval(timerRef.current);
   }, [isPlaying]);
 
+  useEffect(() => {
+    if (isPlaying) {
+      ensureRecording();
+    } else {
+      pauseRecording();
+    }
+  }, [isPlaying]);
+
   const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
-  const saveSession = async () => {
+  const uploadRecording = async (blob) => {
+    const ext = mimeTypeRef.current.includes("mp4") ? "mp4"
+      : mimeTypeRef.current.includes("ogg") ? "ogg" : "webm";
+    const fileRef = ref(storage, `recordings/${user.uid}/${Date.now()}.${ext}`);
+    await uploadBytes(fileRef, blob, { contentType: mimeTypeRef.current });
+    return await getDownloadURL(fileRef);
+  };
+
+  const saveSession = async (recordingUrl) => {
     if (!user || sessionTime < 10) return;
     try {
       await addDoc(collection(db, "Sessions"), {
@@ -30,6 +52,8 @@ const BottomBar = () => {
         laya,
         tradition,
         duration: sessionTime,
+        outOfTuneCount,
+        recordingUrl: recordingUrl || null,
         date: serverTimestamp(),
       });
     } catch (e) {
@@ -38,9 +62,23 @@ const BottomBar = () => {
   };
 
   const handleStop = async () => {
-    await saveSession();
+    const blob = await finalizeRecording();
+
+    if (user && sessionTime >= 10) {
+      let recordingUrl = null;
+      if (blob) {
+        try {
+          recordingUrl = await uploadRecording(blob);
+        } catch (e) {
+          console.error("Error uploading recording:", e);
+        }
+      }
+      await saveSession(recordingUrl);
+    }
+
     setIsPlaying(false);
     setSessionTime(0);
+    setOutOfTuneCount(0);
   };
 
   return (

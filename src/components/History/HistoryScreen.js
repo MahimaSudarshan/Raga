@@ -57,27 +57,39 @@ const HistoryScreen = () => {
         </div>
       ) : (
         <div style={{ background:"#FBF7F0", border:"1px solid #D4B896", borderRadius:"12px", overflow:"hidden" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse" }}>
-            <thead>
-              <tr style={{ background:"#F0E8D8", borderBottom:"1px solid #D4B896" }}>
-                {["DATE","DURATION","SHRUTI","TAAL","LAYA","TRADITION"].map(h => (
-                  <th key={h} style={{ padding:"14px 20px", fontSize:"10px", letterSpacing:"2px", color:"#A08060", textAlign:"left", fontWeight:500 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sessions.map((row) => (
-                <tr key={row.id} style={{ borderBottom:"1px solid #EDE5D8" }}>
-                  <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210" }}>{formatDate(row.date)}</td>
-                  <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210" }}>{fmt(row.duration)}</td>
-                  <td style={{ padding:"16px 20px", fontSize:"13px", color:"#C8A96E", fontWeight:500 }}>SA · {row.shruti}</td>
-                  <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210" }}>{row.taal}</td>
-                  <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210" }}>{row.laya}</td>
-                  <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210", textTransform:"capitalize" }}>{row.tradition}</td>
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead>
+                <tr style={{ background:"#F0E8D8", borderBottom:"1px solid #D4B896" }}>
+                  {["DATE","DURATION","SHRUTI","TAAL","LAYA","TRADITION","OUT OF TUNE","RECORDING"].map(h => (
+                    <th key={h} style={{ padding:"14px 20px", fontSize:"10px", letterSpacing:"2px", color:"#A08060", textAlign:"left", fontWeight:500, whiteSpace:"nowrap" }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sessions.map((row) => (
+                  <tr key={row.id} style={{ borderBottom:"1px solid #EDE5D8" }}>
+                    <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210", whiteSpace:"nowrap" }}>{formatDate(row.date)}</td>
+                    <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210", whiteSpace:"nowrap" }}>{fmt(row.duration)}</td>
+                    <td style={{ padding:"16px 20px", fontSize:"13px", color:"#C8A96E", fontWeight:500, whiteSpace:"nowrap" }}>SA · {row.shruti}</td>
+                    <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210", whiteSpace:"nowrap" }}>{row.taal}</td>
+                    <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210", whiteSpace:"nowrap" }}>{row.laya}</td>
+                    <td style={{ padding:"16px 20px", fontSize:"13px", color:"#3D2210", textTransform:"capitalize", whiteSpace:"nowrap" }}>{row.tradition}</td>
+                    <td style={{ padding:"16px 20px", fontSize:"13px", color: row.outOfTuneCount > 0 ? "#C8503A" : "#3D2210", whiteSpace:"nowrap" }}>
+                      {row.outOfTuneCount ?? "—"}
+                    </td>
+                    <td style={{ padding:"16px 20px" }}>
+                      {row.recordingUrl ? (
+                        <audio controls src={row.recordingUrl} style={{ height:"32px", maxWidth:"200px" }} />
+                      ) : (
+                        <span style={{ fontSize:"13px", color:"#A08060" }}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
